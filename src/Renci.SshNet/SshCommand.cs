@@ -195,6 +195,8 @@ namespace Renci.SshNet
         /// </summary>
         /// <param name="callback">An optional asynchronous callback, to be called when the command execution is complete.</param>
         /// <param name="state">A user-provided object that distinguishes this particular asynchronous read request from other requests.</param>
+        /// <param name="stdout">A stream to be used as the output stream.</param>
+        /// <param name="stderr">A stream to be used as the extended output stream.</param>
         /// <returns>
         /// An <see cref="IAsyncResult" /> that represents the asynchronous command execution, which could still be pending.
         /// </returns>
@@ -205,7 +207,7 @@ namespace Renci.SshNet
         /// <exception cref="SshOperationTimeoutException">Operation has timed out.</exception>
         /// <exception cref="InvalidOperationException">Asynchronous operation is already in progress.</exception>
         /// <exception cref="ArgumentException">CommandText property is empty.</exception>
-        public IAsyncResult BeginExecute(AsyncCallback callback, object state)
+        public IAsyncResult BeginExecute(AsyncCallback callback, object state, Stream stdout = null, Stream stderr = null)
         {
             //  Prevent from executing BeginExecute before calling EndExecute
             if (_asyncResult != null && !_asyncResult.EndCalled)
@@ -245,8 +247,8 @@ namespace Renci.SshNet
             }
 
             //  Initialize output streams
-            OutputStream = new PipeStream();
-            ExtendedOutputStream = new PipeStream();
+            OutputStream = (stdout == null ? new PipeStream() : stdout);
+            ExtendedOutputStream = (stderr == null ? new PipeStream() : stderr);
 
             _result = null;
             _error = null;
@@ -306,6 +308,9 @@ namespace Renci.SshNet
                 {
                     throw new ArgumentException("EndExecute can only be called once for each asynchronous operation.");
                 }
+
+                // always send EOF when closing exec channel
+                _channel.SendEof();
 
                 //  wait for operation to complete (or time out)
                 WaitOnHandle(_asyncResult.AsyncWaitHandle);
@@ -512,6 +517,44 @@ namespace Renci.SshNet
 
             // actually dispose the channel
             channel.Dispose();
+        }
+
+        /// <summary>
+         /// Sends the data to channel.
+         /// </summary>
+         /// <param name="data">Data.</param>
+         public void SendData(byte[] data)
+         {
+             SendData(data, 0, data.Length);
+         }
+ 
+         /// <summary>
+         /// Sends the data with offset and size to channel.
+         /// </summary>
+         /// <param name="data">Data.</param>
+         /// <param name="offset">Offset.</param>
+         /// <param name="size">Size.</param>
+         public void SendData(byte[] data, int offset, int size)
+         {
+             _channel.SendData(data, offset, size);
+        }
+
+        /// <summary>
+         /// Sends the data to channel.
+         /// </summary>
+         /// <param name="data">Data.</param>
+         public void SendData(Stream data)
+         {
+            if (data == null)
+                return;
+
+            byte[] buffer = new byte[2048]; // read in chunks of 2KB
+            int bytesRead;
+
+            while ((bytesRead = data.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                _channel.SendData(buffer, 0, bytesRead);
+            }
         }
 
         #region IDisposable Members
