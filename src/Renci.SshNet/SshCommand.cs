@@ -548,7 +548,7 @@ namespace Renci.SshNet
             if (data == null)
                 return;
 
-            byte[] buffer = new byte[2048]; // read in chunks of 2KB
+            byte[] buffer = new byte[131072]; // read in chunks of 128KB
             int bytesRead;
 
             while ((bytesRead = data.Read(buffer, 0, buffer.Length)) > 0)
