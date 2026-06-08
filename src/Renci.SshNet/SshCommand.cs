@@ -212,7 +212,7 @@ namespace Renci.SshNet
         /// <param name="commandText">The command text.</param>
         /// <param name="encoding">The encoding to use for the results.</param>
         /// <exception cref="ArgumentNullException">Either <paramref name="session"/>, <paramref name="commandText"/> is <see langword="null"/>.</exception>
-        internal SshCommand(ISession session, string commandText, Encoding encoding)
+        internal SshCommand(ISession session, string commandText, Encoding encoding, Stream? stdOut = null, Stream? stdErr = null)
         {
             ThrowHelper.ThrowIfNull(session);
             ThrowHelper.ThrowIfNull(commandText);
@@ -222,8 +222,8 @@ namespace Renci.SshNet
             CommandText = commandText;
             _encoding = encoding;
             CommandTimeout = Timeout.InfiniteTimeSpan;
-            OutputStream = new PipeStream();
-            ExtendedOutputStream = new PipeStream();
+            OutputStream = stdOut ?? new PipeStream();
+            ExtendedOutputStream = stdErr ?? new PipeStream();
             _session.Disconnected += Session_Disconnected;
             _session.ErrorOccured += Session_ErrorOccurred;
             _channel = _session.CreateChannelSession();
@@ -383,7 +383,7 @@ namespace Renci.SshNet
         /// </returns>
         /// <exception cref="SshConnectionException">Client is not connected.</exception>
         /// <exception cref="SshOperationTimeoutException">Operation has timed out.</exception>
-        public IAsyncResult BeginExecute(string commandText, AsyncCallback? callback, object? state)
+        public IAsyncResult BeginExecute(string commandText, AsyncCallback? callback, object? state, Stream stdOut, Stream stdErr)
         {
             ThrowHelper.ThrowIfNull(commandText);
 
@@ -614,6 +614,44 @@ namespace Renci.SshNet
             if (dispose)
             {
                 channel.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Sends the data to channel.
+        /// </summary>
+        /// <param name="data">Data.</param>
+        public void SendData(byte[] data)
+        {
+            SendData(data, 0, data.Length);
+        }
+
+        /// <summary>
+        /// Sends the data with offset and size to channel.
+        /// </summary>
+        /// <param name="data">Data.</param>
+        /// <param name="offset">Offset.</param>
+        /// <param name="size">Size.</param>
+        public void SendData(byte[] data, int offset, int size)
+        {
+            _channel.SendData(data, offset, size);
+        }
+
+        /// <summary>
+        /// Sends the data to channel.
+        /// </summary>
+        /// <param name="data">Data.</param>
+        public void SendData(Stream data)
+        {
+            if (data == null)
+                return;
+
+            byte[] buffer = new byte[131072]; // read in chunks of 2KB
+            int bytesRead;
+
+            while ((bytesRead = data.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                _channel.SendData(buffer, 0, bytesRead);
             }
         }
 

@@ -38,20 +38,24 @@ namespace Renci.SshNet
         /// Creates the command to be executed.
         /// </summary>
         /// <param name="commandText">The command text.</param>
+        /// <param name="stdOut">The output stream to write to.</param>
+        /// <param name="stdErr">The error stream to write to.</param>
         /// <returns><see cref="SshCommand"/> object.</returns>
         /// <exception cref="SshConnectionException">Client is not connected.</exception>
-        public SshCommand CreateCommand(string commandText);
+        public SshCommand CreateCommand(string commandText, Stream? stdOut = null, Stream? stdErr = null);
 
         /// <summary>
         /// Creates the command to be executed with specified encoding.
         /// </summary>
         /// <param name="commandText">The command text.</param>
         /// <param name="encoding">The encoding to use for results.</param>
+        /// <param name="stdOut">The output stream to write to.</param>
+        /// <param name="stdErr">The error stream to write to.</param>
         /// <returns><see cref="SshCommand"/> object which uses specified encoding.</returns>
         /// <remarks>This method will change current default encoding.</remarks>
         /// <exception cref="SshConnectionException">Client is not connected.</exception>
         /// <exception cref="ArgumentNullException"><paramref name="commandText"/> or <paramref name="encoding"/> is <see langword="null"/>.</exception>
-        public SshCommand CreateCommand(string commandText, Encoding encoding);
+        public SshCommand CreateCommand(string commandText, Encoding encoding, Stream? stdOut = null, Stream? stdErr = null);
 
         /// <summary>
         /// Creates and executes the command.

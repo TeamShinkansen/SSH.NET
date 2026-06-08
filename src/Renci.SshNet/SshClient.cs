@@ -191,18 +191,18 @@ namespace Renci.SshNet
         }
 
         /// <inheritdoc />
-        public SshCommand CreateCommand(string commandText)
+        public SshCommand CreateCommand(string commandText, Stream? stdOut = null, Stream? stdErr = null)
         {
-            return CreateCommand(commandText, ConnectionInfo.Encoding);
+            return CreateCommand(commandText, ConnectionInfo.Encoding, stdOut, stdErr);
         }
 
         /// <inheritdoc />
-        public SshCommand CreateCommand(string commandText, Encoding encoding)
+        public SshCommand CreateCommand(string commandText, Encoding encoding, Stream? stdOut = null, Stream? stdErr = null)
         {
             EnsureSessionIsOpen();
 
             ConnectionInfo.Encoding = encoding;
-            return new SshCommand(Session!, commandText, encoding);
+            return new SshCommand(Session!, commandText, encoding, stdOut, stdErr);
         }
 
         /// <inheritdoc />
